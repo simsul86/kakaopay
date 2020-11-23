@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kakaopay.test.mapper.TestMapper">
+    
+    <select id="selectTest" parameterType="java.util.Map" resultType="java.util.Map">
+        
+        SELECT *
+          FROM PAY_SPRINKLE
+         WHERE 1 = 1
+    </select>
+    
+    <select id="selectTokenId" resultType="java.util.Map">
+       
+       SELECT LEFT(UUID(), 3) TOKEN_ID 
+         FROM DUAL;
+    </select>    
+    
+    <insert id="insertPaySpk" parameterType="Map">
+
+      INSERT INTO PAY_SPRINKLE 
+      ( 
+      	room_id
+      , token_id
+      , pay_snd_id
+      , pay_snd_amt
+      , pay_snd_count
+      , pay_snd_date
+      )
+      VALUES 
+      ( 
+      	#{roomId}
+      , #{tokenId}
+      , #{paySndId}
+      , #{paySndAmt}
+      , #{paySndCnt}
+      , sysdate
+      )
+    </insert>
+    
+    <insert id="insertPaySpkHist" parameterType="Map">
+
+      INSERT INTO PAY_SPRINKLE_HIST
+      ( 
+      	room_id
+      , token_id
+      , seq
+      , pay_rcv_id
+      , pay_rcv_amt
+      , pay_rcv_yn
+      , pay_rcv_date
+      )
+      VALUES
+      ( 
+      	#{roomId}
+      , #{tokenId}
+      , #{seq}
+      , #{payRcvId}
+      , #{payRcvAmt}
+      , #{payRcvYn}
+      , sysdate
+      )
+    </insert>
+
+    <select id="selectPaySpk" parameterType="java.util.Map" resultType="java.util.Map">
+
+        SELECT A.room_id
+        	 , A.token_id
+        	 , A.pay_snd_id
+        	 , A.pay_snd_amt
+        	 , A.pay_snd_count
+        	 , A.pay_snd_date
+        	 , timestampdiff(MINUTE, A.pay_snd_date, sysdate) AS diff_minute
+             , timestampdiff(DAY, pay_snd_date, sysdate) AS diff_day
+        	 , (SELECT SUM(PAY_RCV_AMT) 
+        		  FROM PAY_SPRINKLE_HIST 
+        		 WHERE ROOM_ID = #{roomId} 
+        		   AND TOKEN_ID = #{tokenId} 
+        		   AND PAY_RCV_YN= 'Y') AS RCV_AMT_SUM
+          FROM PAY_SPRINKLE A
+         WHERE 1 = 1
+           AND A.token_id = #{tokenId}
+           AND A.room_id = #{roomId}
+    </select>
+    
+    <select id="selectPaySpkHist" parameterType="java.util.Map" resultType="java.util.Map">
+
+        SELECT room_id
+        	 , token_id
+        	 , seq
+        	 , pay_rcv_id
+        	 , pay_rcv_amt
+        	 , pay_rcv_yn
+        	 , pay_rcv_date
+          FROM PAY_SPRINKLE_HIST
+         WHERE 1 = 1
+		   AND token_id = #{tokenId}
+		   AND room_id = #{roomId}
+		   
+    </select>
+    
+    <update id="updatePaySpkHist" parameterType="Map">
+
+    	UPDATE PAY_SPRINKLE_HIST
+    	   SET pay_rcv_id = #{userId}
+    	     , pay_rcv_yn = #{payRcvYn}
+    		 , pay_rcv_date = sysdate
+    	 WHERE 1=1
+    	   AND token_id = #{tokenId}
+    	   AND room_id = #{roomId}
+           AND seq = #{seq}
+    </update>
+        
+    <select id="selectPaySpkHistCmpl" parameterType="java.util.Map" resultType="java.util.Map" >
+
+        SELECT PAY_RCV_AMT 
+          	 , PAY_RCV_ID
+          FROM PAY_SPRINKLE_HIST
+         WHERE 1 = 1
+           AND TOKEN_ID = #{tokenId}
+           AND ROOM_ID = #{roomId}
+           AND PAY_RCV_YN = 'Y'
+    </select>
+</mapper>
